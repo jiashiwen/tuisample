@@ -1,0 +1,14 @@
+# Log file
+*.log
+**/log
+
+#idea ignore
+**/.idea
+
+# vscode
+**/.vscode
+# rust ignore
+Cargo.lock
+**/target
+**/*.rs.bk
+
