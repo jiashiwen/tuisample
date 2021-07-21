@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use anyhow::{bail, Result};
 use crossterm::event::{Event, KeyEvent};
+use log::info;
 use tui::backend::Backend;
 use tui::Frame;
 use tui::layout::{Constraint, Direction, Layout, Margin, Rect};
@@ -168,6 +169,7 @@ impl App {
         );
     }
     pub fn event(&mut self, ev: KeyEvent) -> Result<()> {
+        info!("event invoked!");
         if let k = ev {
             if k == self.key_config.quit || k == self.key_config.exit {
                 self.do_quit = true;
@@ -215,7 +217,7 @@ impl App {
     // }
 
     pub fn update(&mut self) -> Result<()> {
-        // log::trace!("update");
+        log::trace!("update");
 
         self.update_commands();
 
@@ -373,7 +375,6 @@ impl App {
                 break;
             }
         }
-        log::info!("out test");
 
 
         res.push(

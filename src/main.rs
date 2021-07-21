@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use anyhow::{bail, Result};
 use crossterm::{event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode}, ExecutableCommand, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
 use crossterm::event::{KeyEvent, KeyModifiers};
+use log::{debug, info};
 use scopeguard::defer;
 use tui::backend::{Backend, CrosstermBackend};
 use tui::layout::{Constraint, Direction, Layout};
@@ -18,6 +19,7 @@ use tui::widgets::{Block, Borders, Tabs};
 use crate::app::App;
 use crate::components::Component;
 use crate::keys::KeyConfig;
+use crate::logger::init_log;
 use crate::ui::style::Theme;
 
 #[allow(dead_code)]
@@ -30,6 +32,7 @@ mod cmdbar;
 mod components;
 mod strings;
 mod tabs;
+mod logger;
 
 
 enum Event<I> {
@@ -39,6 +42,8 @@ enum Event<I> {
 
 
 fn main() -> Result<(), Box<dyn Error>> {
+    init_log();
+
     enable_raw_mode()?;
     let key_config = KeyConfig::init(KeyConfig::get_config_file()?)
         .map_err(|e| eprintln!("KeyConfig loading error: {}", e))

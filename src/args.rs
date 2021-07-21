@@ -1,15 +1,17 @@
-use crate::bug_report;
-use anyhow::{anyhow, Result};
-use clap::{
-    crate_authors, crate_description, crate_name, crate_version,
-    App as ClapApp, Arg,
-};
-use simplelog::{Config, LevelFilter, WriteLogger};
+// use simplelog::{Config, LevelFilter, WriteLogger};
 use std::{
     env,
     fs::{self, File},
     path::PathBuf,
 };
+
+use anyhow::{anyhow, Result};
+use clap::{
+    App as ClapApp, Arg, crate_authors, crate_description,
+    crate_name, crate_version,
+};
+
+use crate::bug_report;
 
 pub struct CliArgs {
     pub theme: PathBuf,
@@ -74,14 +76,14 @@ pub fn process_cmdline() -> Result<CliArgs> {
 }
 
 fn setup_logging() -> Result<()> {
-    let mut path = get_app_cache_path()?;
-    path.push("gitui.log");
-
-    let _ = WriteLogger::init(
-        LevelFilter::Trace,
-        Config::default(),
-        File::create(path)?,
-    );
+    // let mut path = get_app_cache_path()?;
+    // path.push("gitui.log");
+    //
+    // let _ = WriteLogger::init(
+    //     LevelFilter::Trace,
+    //     Config::default(),
+    //     File::create(path)?,
+    // );
 
     Ok(())
 }
@@ -101,7 +103,7 @@ pub fn get_app_config_path() -> Result<PathBuf> {
     } else {
         dirs_next::config_dir()
     }
-    .ok_or_else(|| anyhow!("failed to find os config dir."))?;
+        .ok_or_else(|| anyhow!("failed to find os config dir."))?;
 
     path.push("gitui");
     fs::create_dir_all(&path)?;
