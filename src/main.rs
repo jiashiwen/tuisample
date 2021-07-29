@@ -33,6 +33,7 @@ mod components;
 mod strings;
 mod tabs;
 mod logger;
+mod version;
 
 
 enum Event<I> {
@@ -43,7 +44,6 @@ enum Event<I> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     init_log();
-
     enable_raw_mode()?;
     let key_config = KeyConfig::init(KeyConfig::get_config_file()?)
         .map_err(|e| eprintln!("KeyConfig loading error: {}", e))
@@ -73,7 +73,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .checked_sub(last_tick.elapsed())
                 .unwrap_or_else(|| Duration::from_secs(0));
             if event::poll(timeout).unwrap() {
-                if let CEvent::Key(key) = event::read().unwrap() {
+                // if let CEvent::Key(key) = event::read().unwrap() {
+                if let key = event::read().unwrap() {
                     tx.send(Event::Input(key)).unwrap();
                 }
             }
@@ -97,48 +98,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             Event::Input(event) => {
                 app.event(event)?;
             }
-            // Event::Input(event) => match event {
-            //     KeyEvent { code: KeyCode::Char('c'), modifiers: KeyModifiers::CONTROL } => {
-            //         disable_raw_mode()?;
-            //         execute!(
-            //             terminal.backend_mut(),
-            //             LeaveAlternateScreen,
-            //             DisableMouseCapture
-            //         )?;
-            //         terminal.show_cursor()?;
-            //
-            //         break;
-            //     }
-            //     KeyEvent { code: KeyCode::Char('1'), modifiers: emptymodifier } => {
-            //         app.tab = 0;
-            //
-            //         app.update_commands();
-            //     }
-            //     KeyEvent { code: KeyCode::Char('2'), modifiers: emptymodifier } => {
-            //         app.tab = 1;
-            //         app.update_commands();
-            //     }
-            //     KeyEvent { code: KeyCode::Char('3'), modifiers: emptymodifier } => {
-            //         app.tab = 2;
-            //         app.update_commands();
-            //     }
-            //     _ => {
-            //         match event.code {
-            //             KeyCode::Tab => {
-            //                 app.on_right();
-            //                 app.update_commands();
-            //             }
-            //
-            //             // KeyCode::Left => app.on_left(),
-            //             // KeyCode::Right => app.on_right(),
-            //
-            //             KeyCode::Down => { app.update()? }
-            //             _ => {}
-            //         }
-            //     }
-            // }
+
             Event::Tick => {
                 app.on_tick();
+                // draw(&mut terminal, &app)?;
             }
         }
 

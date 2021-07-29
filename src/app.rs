@@ -10,9 +10,9 @@ use tui::layout::{Constraint, Direction, Layout, Margin, Rect};
 use tui::text::{Span, Spans};
 use tui::widgets::{Block, Borders, Tabs};
 
-use crate::accessors;
+use crate::{accessors, setup_popups};
 use crate::cmdbar::CommandBar;
-use crate::components::{CommandBlocking, CommandInfo, Component, DrawableComponent};
+use crate::components::{CommandBlocking, CommandInfo, Component, DrawableComponent, event_pump, HelpComponent};
 use crate::keys::{KeyConfig, SharedKeyConfig};
 use crate::strings;
 use crate::strings::order;
@@ -23,8 +23,7 @@ use crate::ui::style::{SharedTheme, Theme};
 
 pub struct App {
     do_quit: bool,
-    // pub title: &str,
-    // pub tabs: TabsState,
+    help: HelpComponent,
     t01: T01,
     t02: T02,
     t03: T03,
@@ -77,6 +76,10 @@ impl App {
                 theme.clone(),
                 key_config.clone(),
             ),
+            help: HelpComponent::new(
+                theme.clone(),
+                key_config.clone(),
+            ),
             theme,
             // queue,
         }
@@ -124,11 +127,10 @@ impl App {
             0 => self.t01.draw(f, chunks_main[1])?,
             1 => self.t02.draw(f, chunks_main[1])?,
             2 => self.t03.draw(f, chunks_main[1])?,
-
             _ => bail!("unknown tab"),
         };
 
-        // self.draw_popups(f)?;
+        self.draw_popups(f)?;
 
         Ok(())
     }
@@ -168,15 +170,22 @@ impl App {
             r,
         );
     }
-    pub fn event(&mut self, ev: KeyEvent) -> Result<()> {
-        info!("event invoked!");
-        if let k = ev {
+    pub fn event(&mut self, ev: Event) -> Result<()> {
+        if event_pump(ev, self.components_mut().as_mut_slice())?
+            .is_consumed() {
+            return Ok(());
+        }
+
+        if let Event::Key(k) = ev {
+            if k == self.key_config.open_help {
+                self.help.show();
+            }
             if k == self.key_config.quit || k == self.key_config.exit {
                 self.do_quit = true;
                 return Ok(());
             }
             if k == self.key_config.tab_toggle {
-                self.toggle_tabs(true);
+                self.toggle_tabs(false);
                 self.update();
                 return Ok(());
             }
@@ -225,7 +234,7 @@ impl App {
     }
 
     pub fn update_commands(&mut self) {
-        // self.help.set_cmds(self.commands(true));
+        self.help.set_cmds(self.commands(true));
         self.cmdbar.borrow_mut().set_cmds(self.commands(false));
     }
 
@@ -283,6 +292,7 @@ impl App {
     }
 
     pub fn on_tick(&mut self) {
+        self.update();
         // Update progress
         // self.progress += 0.001;
         // if self.progress > 1.0 {
@@ -307,7 +317,15 @@ impl App {
         [
             t01,
             t02,
-            t03
+            t03,
+            help
+        ]
+    );
+
+    setup_popups!(
+        self,
+        [
+            help
         ]
     );
 
@@ -381,8 +399,7 @@ impl App {
             CommandInfo::new(
                 strings::commands::toggle_tabs(&self.key_config),
                 true,
-                // !self.any_popup_visible(),
-                true,
+                !self.any_popup_visible(),
             )
                 .order(order::NAV),
         );
@@ -392,8 +409,7 @@ impl App {
                     &self.key_config,
                 ),
                 true,
-                // !self.any_popup_visible(),
-                true,
+                !self.any_popup_visible(),
             )
                 .order(order::NAV),
         );
@@ -402,8 +418,7 @@ impl App {
             CommandInfo::new(
                 strings::commands::quit(&self.key_config),
                 true,
-                // !self.any_popup_visible(),
-                true,
+                !self.any_popup_visible(),
             )
                 .order(127),
         );

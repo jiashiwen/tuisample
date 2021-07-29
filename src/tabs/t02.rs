@@ -1,12 +1,16 @@
 use anyhow::Result;
 use crossterm::event::Event;
+use serde::__private::ser::constrain;
+use tui::layout::{Constraint, Direction, Layout};
 use tui::widgets::{Block, Borders};
 
 use crate::{
     components::{
-        CommandBlocking, CommandInfo,
+        CommandBlocking,
+        CommandInfo,
+        Component,
         // CommitList,
-        Component, DrawableComponent, EventState, visibility_blocking,
+        DrawableComponent, EventState, SearchComponent, visibility_blocking,
     },
     keys::SharedKeyConfig,
     // queue::{Action, InternalEvent, Queue},
@@ -23,6 +27,7 @@ pub struct T02 {
     // list: CommitList,
     visible: bool,
     // queue: Queue,
+    search: SearchComponent,
     key_config: SharedKeyConfig,
 }
 
@@ -41,6 +46,7 @@ impl T02 {
             //     key_config.clone(),
             // ),
             // queue: queue.clone(),
+            search: SearchComponent::new(key_config.clone()),
             key_config,
         }
     }
@@ -132,13 +138,26 @@ impl DrawableComponent for T02 {
         f: &mut tui::Frame<B>,
         rect: tui::layout::Rect,
     ) -> Result<()> {
-        let inner = Block::default().title("t02").borders(Borders::ALL);
-        f.render_widget(inner, rect);
-        // self.list.draw(f, rect)?;
-        //
+        if self.is_visible() {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Length(3),
+                        Constraint::Length(9)
+                    ]
+                ).split(rect);
+
+            self.search.draw(f, chunks[0])?;
+            let inner = Block::default().title("t02").borders(Borders::ALL);
+            f.render_widget(inner, chunks[1]);
+            // self.list.draw(f, rect)?;
+            //
+        }
         Ok(())
     }
 }
+
 
 impl Component for T02 {
     fn commands(
@@ -148,15 +167,16 @@ impl Component for T02 {
     ) -> CommandBlocking {
         if self.visible || force_all {
             // self.list.commands(out, force_all);
+            self.search.commands(out, force_all);
 
             // let selection_valid =
             //     self.list.selected_entry().is_some();
-            out.push(CommandInfo::new(
-                strings::commands::stashing_save(&self.key_config),
-                // selection_valid,
-                true,
-                true,
-            ));
+            // out.push(CommandInfo::new(
+            //     strings::commands::stashing_save(&self.key_config),
+            //     // selection_valid,
+            //     true,
+            //     true,
+            // ));
             out.push(CommandInfo::new(
                 strings::commands::log_details_open(&self.key_config),
                 // selection_valid,
@@ -190,18 +210,18 @@ impl Component for T02 {
             // if self.list.event(ev)?.is_consumed() {
             //     return Ok(EventState::Consumed);
             // }
-
-            if let Event::Key(k) = ev {
-                if k == self.key_config.enter {
-                    self.pop_stash();
-                } else if k == self.key_config.stash_apply {
-                    self.apply_stash();
-                } else if k == self.key_config.stash_drop {
-                    self.drop_stash();
-                } else if k == self.key_config.stash_open {
-                    self.inspect();
-                }
-            }
+            return self.search.event(ev);
+            // if let Event::Key(k) = ev {
+            //     if k == self.key_config.enter {
+            //         self.pop_stash();
+            //     } else if k == self.key_config.stash_apply {
+            //         self.apply_stash();
+            //     } else if k == self.key_config.stash_drop {
+            //         self.drop_stash();
+            //     } else if k == self.key_config.stash_open {
+            //         self.inspect();
+            //     }
+            // }
         }
 
         Ok(EventState::NotConsumed)

@@ -11,39 +11,15 @@ use tui::{
 };
 
 pub use command::{CommandInfo, CommandText};
+pub use help::HelpComponent;
+pub use search::SearchComponent;
 
 use crate::ui::style::Theme;
 
-// pub use self::filetree::FileTreeComponent;
-
-// mod blame_file;
-// mod branchlist;
-// mod changes;
 mod command;
-// mod commit;
-// mod commit_details;
-// mod commitlist;
-// mod create_branch;
-// mod cred;
-// mod diff;
-// mod externaleditor;
-// mod filetree;
-// mod help;
-// mod inspect_commit;
-// mod msg;
-// mod pull;
-// mod push;
-// mod push_tags;
-// mod rename_branch;
-// mod reset;
-// mod revision_files;
-// mod revision_files_popup;
-// mod stashmsg;
-// mod syntax_text;
-// mod tag_commit;
-// mod taglist;
-// mod textinput;
-// mod utils;
+mod help;
+mod search;
+
 
 /// creates accessors for a list of components
 ///

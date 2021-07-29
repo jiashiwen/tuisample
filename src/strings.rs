@@ -384,6 +384,17 @@ pub mod commands {
     static CMD_GROUP_LOG: &str = "-- Log --";
     static CMD_GROUP_BRANCHES: &str = "-- Branches --";
 
+    pub fn search_input_enable(key_config: &SharedKeyConfig) -> CommandText {
+        CommandText::new(
+            format!(
+                "Search [{}]",
+                key_config.get_hint(key_config.stashing_save)
+            ),
+            "Enable Search input",
+            CMD_GROUP_GENERAL,
+        )
+    }
+
     pub fn toggle_tabs(key_config: &SharedKeyConfig) -> CommandText {
         CommandText::new(
             format!(
