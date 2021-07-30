@@ -1,5 +1,8 @@
+use std::cell::Cell;
+
 use anyhow::Result;
-use crossterm::event::Event;
+use crossterm::event::{Event, KeyCode};
+use log::info;
 use serde::__private::ser::constrain;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::widgets::{Block, Borders};
@@ -17,6 +20,7 @@ use crate::{
     strings,
     ui::style::SharedTheme,
 };
+use crate::components::ListComponent;
 
 // use asyncgit::{
 //     CWD,
@@ -27,7 +31,9 @@ pub struct T02 {
     // list: CommitList,
     visible: bool,
     // queue: Queue,
+    msg: Vec<String>,
     search: SearchComponent,
+    list: ListComponent,
     key_config: SharedKeyConfig,
 }
 
@@ -46,7 +52,9 @@ impl T02 {
             //     key_config.clone(),
             // ),
             // queue: queue.clone(),
+            msg: vec![],
             search: SearchComponent::new(key_config.clone()),
+            list: ListComponent::new(key_config.clone()),
             key_config,
         }
     }
@@ -60,10 +68,15 @@ impl T02 {
             //
             // self.list.set_count_total(commits.len());
             // self.list.items().set_items(0, commits);
+            // info!("{:?}",self.get_search_msg());
         }
 
         Ok(())
     }
+
+    // pub fn get_search_msg(&mut self) {
+    //     self.msg = self.search.get_msg();
+    // }
 
     fn apply_stash(&mut self) {
         // if let Some(e) = self.list.selected_entry() {
@@ -81,11 +94,7 @@ impl T02 {
     }
 
     fn drop_stash(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     self.queue.push(InternalEvent::ConfirmAction(
-        //         Action::StashDrop(e.id),
-        //     ));
-        // }
+        // info!("{:?}",self.get_search_msg())
     }
 
     fn pop_stash(&mut self) {
@@ -101,35 +110,6 @@ impl T02 {
         //     self.queue.push(InternalEvent::InspectCommit(e.id, None));
         // }
     }
-
-    // Called when a pending stash action has been confirmed
-    // pub fn action_confirmed(&self, action: &Action) -> bool {
-    //     match *action {
-    //         Action::StashDrop(id) => Self::drop(id),
-    //         Action::StashPop(id) => self.pop(id),
-    //         _ => false,
-    //     }
-    //
-    // }
-
-    // fn drop(id: CommitId) -> bool {
-    //     sync::stash_drop(CWD, id).is_ok()
-    // }
-
-    // fn pop(&self, id: CommitId) -> bool {
-    //     match sync::stash_pop(CWD, id) {
-    //         Ok(_) => {
-    //             self.queue.push(InternalEvent::TabSwitch);
-    //             true
-    //         }
-    //         Err(e) => {
-    //             self.queue.push(InternalEvent::ShowErrorMsg(
-    //                 format!("stash pop error:\n{}", e, ),
-    //             ));
-    //             true
-    //         }
-    //     }
-    // }
 }
 
 impl DrawableComponent for T02 {
@@ -149,10 +129,9 @@ impl DrawableComponent for T02 {
                 ).split(rect);
 
             self.search.draw(f, chunks[0])?;
-            let inner = Block::default().title("t02").borders(Borders::ALL);
-            f.render_widget(inner, chunks[1]);
-            // self.list.draw(f, rect)?;
-            //
+            // let inner = Block::default().title("t02").borders(Borders::ALL);
+            // f.render_widget(inner, chunks[1]);
+            self.list.draw(f, chunks[1])?;
         }
         Ok(())
     }
@@ -207,10 +186,18 @@ impl Component for T02 {
         ev: crossterm::event::Event,
     ) -> Result<EventState> {
         if self.is_visible() {
-            // if self.list.event(ev)?.is_consumed() {
-            //     return Ok(EventState::Consumed);
-            // }
-            return self.search.event(ev);
+            // self.update();
+
+            let result = self.search.event(ev);
+            let msg = self.search.get_msg();
+            info!("msg is empty {}",msg.is_empty());
+            if !msg.is_empty() {
+                info!("{:?}",msg);
+                self.list.list_item_add(msg);
+            }
+
+
+            return result;
             // if let Event::Key(k) = ev {
             //     if k == self.key_config.enter {
             //         self.pop_stash();

@@ -12,6 +12,7 @@ use tui::{
 
 pub use command::{CommandInfo, CommandText};
 pub use help::HelpComponent;
+pub use list::ListComponent;
 pub use search::SearchComponent;
 
 use crate::ui::style::Theme;
@@ -19,6 +20,7 @@ use crate::ui::style::Theme;
 mod command;
 mod help;
 mod search;
+mod list;
 
 
 /// creates accessors for a list of components

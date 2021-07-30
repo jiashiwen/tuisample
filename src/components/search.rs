@@ -3,7 +3,7 @@ use crossterm::event::{Event, KeyCode};
 use log::info;
 use tui::backend::Backend;
 use tui::Frame;
-use tui::layout::{Constraint, Direction, Layout, Rect};
+use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Style};
 use tui::widgets::{Block, Borders, Paragraph};
 use unicode_width::UnicodeWidthStr;
@@ -26,7 +26,7 @@ pub struct SearchComponent {
     //字符串指针位置
     input_position: usize,
     cursor_position: usize,
-    message: Vec<String>,
+    message: String,
     key_config: SharedKeyConfig,
 }
 
@@ -50,7 +50,7 @@ impl DrawableComponent for SearchComponent {
                     InputMode::Normal => Style::default(),
                     InputMode::Editing => Style::default().fg(Color::Yellow),
                 })
-                .block(Block::default().borders(Borders::ALL).title("搜索"));
+                .block(Block::default().borders(Borders::ALL).title("Input"));
             f.render_widget(input, rect);
             match self.input_mode {
                 InputMode::Normal =>
@@ -100,8 +100,12 @@ impl Component for SearchComponent {
                 match self.input_mode {
                     InputMode::Editing => {
                         match key.code {
-                            KeyCode::Char('\n') => {
-                                self.message.push(self.input.drain(..).collect());
+
+                            // KeyCode::Char('\n') => {
+                            KeyCode::Enter => {
+                                // self.message.push(self.input.drain(..).collect());
+                                self.message = self.input.clone();
+                                self.clear();
                             }
                             KeyCode::Char(c) => {
                                 if self.input.width() == self.cursor_position {
@@ -134,7 +138,6 @@ impl Component for SearchComponent {
                             }
                             KeyCode::Esc => {
                                 self.clear();
-                                self.cursor_position = 1;
                                 self.input_mode = InputMode::Normal;
                             }
                             _ => { return Ok(EventState::NotConsumed); }
@@ -182,9 +185,21 @@ impl SearchComponent {
             input: "".to_string(),
             input_position: 0,
             cursor_position: 0,
-            message: vec![],
+            // message: vec![],
+            message: "".to_string(),
             key_config,
         }
+    }
+
+    pub fn get_msg(&mut self) -> String {
+        // self.message.push(self.input.drain(..).collect());
+        let mut str = "".to_string();
+        if !self.message.is_empty() {
+            str = self.message.clone();
+            self.message.clear();
+        }
+
+        return str;
     }
 
     fn clear(&mut self) {
