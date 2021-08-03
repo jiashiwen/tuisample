@@ -7,20 +7,22 @@ use serde::__private::ser::constrain;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::widgets::{Block, Borders};
 
-use crate::{
+pub use crate::{
+    accessors,
     components::{
         CommandBlocking,
         CommandInfo,
         Component,
         // CommitList,
-        DrawableComponent, EventState, SearchComponent, visibility_blocking,
+        DrawableComponent, event_pump, EventState, InputMode, SearchComponent, visibility_blocking,
     },
     keys::SharedKeyConfig,
     // queue::{Action, InternalEvent, Queue},
-    strings,
+
     ui::style::SharedTheme,
 };
 use crate::components::ListComponent;
+use crate::strings;
 
 // use asyncgit::{
 //     CWD,
@@ -34,10 +36,12 @@ pub struct T02 {
     msg: Vec<String>,
     search: SearchComponent,
     list: ListComponent,
+    theme: SharedTheme,
     key_config: SharedKeyConfig,
 }
 
 impl T02 {
+    accessors!(self, [list,search]);
     ///
     pub fn new(
         // queue: &Queue,
@@ -55,6 +59,7 @@ impl T02 {
             msg: vec![],
             search: SearchComponent::new(key_config.clone()),
             list: ListComponent::new(key_config.clone()),
+            theme,
             key_config,
         }
     }
@@ -187,17 +192,32 @@ impl Component for T02 {
     ) -> Result<EventState> {
         if self.is_visible() {
             // self.update();
+            if event_pump(ev, self.components_mut().as_mut_slice())?
+                .is_consumed()
+            {
+                let msg = self.search.get_msg();
+                if !msg.is_empty() {
+                    self.list.list_item_add(msg);
+                }
+                return Ok(EventState::Consumed);
+            }
 
-            let result = self.search.event(ev);
+            match self.search.get_input_mode() {
+                InputMode::Normal => {
+                    return self.list.event(ev);
+                }
+                _ => {}
+            }
+
+            // let result = self.search.event(ev);
             let msg = self.search.get_msg();
             info!("msg is empty {}",msg.is_empty());
             if !msg.is_empty() {
-                info!("{:?}",msg);
                 self.list.list_item_add(msg);
             }
 
 
-            return result;
+            // return result;
             // if let Event::Key(k) = ev {
             //     if k == self.key_config.enter {
             //         self.pop_stash();

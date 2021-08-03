@@ -13,6 +13,7 @@ use tui::{
 pub use command::{CommandInfo, CommandText};
 pub use help::HelpComponent;
 pub use list::ListComponent;
+pub use search::InputMode;
 pub use search::SearchComponent;
 
 use crate::ui::style::Theme;

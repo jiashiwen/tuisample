@@ -14,7 +14,7 @@ use crate::{
 };
 use crate::keys::SharedKeyConfig;
 
-enum InputMode {
+pub enum InputMode {
     Normal,
     Editing,
 }
@@ -200,6 +200,10 @@ impl SearchComponent {
         }
 
         return str;
+    }
+
+    pub fn get_input_mode(&self) -> &InputMode {
+        return &self.input_mode;
     }
 
     fn clear(&mut self) {

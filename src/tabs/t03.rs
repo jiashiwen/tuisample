@@ -23,6 +23,7 @@ pub struct T03 {
     // list: CommitList,
     visible: bool,
     // queue: Queue,
+    theme: SharedTheme,
     key_config: SharedKeyConfig,
 }
 
@@ -41,6 +42,7 @@ impl T03 {
             //     key_config.clone(),
             // ),
             // queue: queue.clone(),
+            theme,
             key_config,
         }
     }

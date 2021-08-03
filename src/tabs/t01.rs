@@ -22,6 +22,7 @@ use crate::{
 pub struct T01 {
     // list: CommitList,
     visible: bool,
+    theme: SharedTheme,
     // queue: Queue,
     key_config: SharedKeyConfig,
 }
@@ -41,6 +42,7 @@ impl T01 {
             //     key_config.clone(),
             // ),
             // queue: queue.clone(),
+            theme,
             key_config,
         }
     }

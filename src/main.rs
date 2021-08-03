@@ -4,8 +4,14 @@ use std::io::Write;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
-use anyhow::{bail, Result};
-use crossterm::{event::{self, DisableMouseCapture, EnableMouseCapture, Event as CEvent, KeyCode}, ExecutableCommand, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
+use anyhow::Result;
+use crossterm::{event::{self},
+                ExecutableCommand,
+                terminal::{
+                    disable_raw_mode,
+                    enable_raw_mode,
+                    EnterAlternateScreen,
+                    LeaveAlternateScreen}};
 use crossterm::event::{KeyEvent, KeyModifiers};
 use log::{debug, info};
 use scopeguard::defer;
@@ -52,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //     .map_err(|e| eprintln!("Theme loading error: {}", e))
     //     .unwrap_or_default();
     let theme = Theme::default();
-    let mut stdout = stdout();
+    let stdout = stdout();
 
 
     setup_terminal()?;
