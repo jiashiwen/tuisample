@@ -2,17 +2,18 @@ use anyhow::Result;
 use crossterm::event::Event;
 use tui::widgets::{Block, Borders};
 
-use crate::{
-    components::{
-        CommandBlocking, CommandInfo,
-        // CommitList,
-        Component, DrawableComponent, EventState, visibility_blocking,
-    },
-    keys::SharedKeyConfig,
-    // queue::{Action, InternalEvent, Queue},
-    strings,
-    ui::style::SharedTheme,
+use crate::{accessors, components::{
+    CommandBlocking, CommandInfo,
+    // CommitList,
+    Component, DrawableComponent, EventState, visibility_blocking,
+},
+            keys::SharedKeyConfig,
+            setup_popups,
+            // queue::{Action, InternalEvent, Queue},
+            strings,
+            ui::style::SharedTheme,
 };
+use crate::components::{event_pump, PopInputComponent};
 
 // use asyncgit::{
 //     CWD,
@@ -22,12 +23,25 @@ use crate::{
 pub struct T03 {
     // list: CommitList,
     visible: bool,
+    popinput: PopInputComponent,
     // queue: Queue,
     theme: SharedTheme,
     key_config: SharedKeyConfig,
 }
 
 impl T03 {
+    accessors!(
+        self,
+        [
+         popinput
+        ]
+    );
+    // setup_popups!(
+    //     self,
+    //     [
+    //         popinput
+    //     ]
+    // );
     ///
     pub fn new(
         // queue: &Queue,
@@ -42,6 +56,7 @@ impl T03 {
             //     key_config.clone(),
             // ),
             // queue: queue.clone(),
+            popinput: PopInputComponent::new(key_config.clone()),
             theme,
             key_config,
         }
@@ -136,8 +151,8 @@ impl DrawableComponent for T03 {
     ) -> Result<()> {
         let inner = Block::default().title("t03").borders(Borders::ALL);
         f.render_widget(inner, rect);
-        // self.list.draw(f, rect)?;
-        //
+        self.popinput.draw(f, rect);
+        // self.draw_popups(f)?;
         Ok(())
     }
 }
@@ -154,27 +169,7 @@ impl Component for T03 {
             // let selection_valid =
             //     self.list.selected_entry().is_some();
             out.push(CommandInfo::new(
-                strings::commands::create_branch_confirm_msg(&self.key_config),
-                // selection_valid,
-                true,
-                true,
-            ));
-            out.push(CommandInfo::new(
-                strings::commands::stashlist_apply(&self.key_config),
-                // selection_valid,
-                true,
-                true,
-            ));
-            out.push(CommandInfo::new(
-                strings::commands::log_tag_commit(&self.key_config),
-                // selection_valid,
-                true,
-                true,
-            ));
-            out.push(CommandInfo::new(
-                strings::commands::status_force_push(
-                    &self.key_config,
-                ),
+                strings::commands::ignore_item(&self.key_config),
                 // selection_valid,
                 true,
                 true,
@@ -192,17 +187,20 @@ impl Component for T03 {
             // if self.list.event(ev)?.is_consumed() {
             //     return Ok(EventState::Consumed);
             // }
-
             if let Event::Key(k) = ev {
-                if k == self.key_config.enter {
-                    self.pop_stash();
-                } else if k == self.key_config.stash_apply {
-                    self.apply_stash();
+                if k == self.key_config.status_ignore_file {
+                    self.popinput.show();
+                    return Ok(EventState::Consumed);
                 } else if k == self.key_config.stash_drop {
                     self.drop_stash();
                 } else if k == self.key_config.stash_open {
                     self.inspect();
                 }
+            }
+            if event_pump(ev, self.components_mut().as_mut_slice())?
+                .is_consumed()
+            {
+                return Ok(EventState::Consumed);
             }
         }
 

@@ -1,33 +1,47 @@
+use std::cell::RefCell;
+
 use anyhow::Result;
 use crossterm::event::Event;
+use log::info;
+use tui::backend::Backend;
+use tui::Frame;
+use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::widgets::{Block, Borders};
 
 use crate::{
+    accessors,
     components::{
         CommandBlocking, CommandInfo,
         // CommitList,
-        Component, DrawableComponent, EventState, visibility_blocking,
+        Component, DrawableComponent, event_pump, EventState, visibility_blocking,
     },
     keys::SharedKeyConfig,
+    setup_popups,
     // queue::{Action, InternalEvent, Queue},
     strings,
     ui::style::SharedTheme,
 };
-
-// use asyncgit::{
-//     CWD,
-//     sync::{self, CommitId},
-// };
+use crate::cmdbar::CommandBar;
+use crate::components::LoginComponent;
 
 pub struct T01 {
-    // list: CommitList,
     visible: bool,
     theme: SharedTheme,
+    login: LoginComponent,
+    cmdbar: RefCell<CommandBar>,
     // queue: Queue,
     key_config: SharedKeyConfig,
 }
 
 impl T01 {
+    accessors!(self, [login]);
+
+    setup_popups!(
+        self,
+        [
+            login
+        ]
+    );
     ///
     pub fn new(
         // queue: &Queue,
@@ -36,12 +50,11 @@ impl T01 {
     ) -> Self {
         Self {
             visible: false,
-            // list: CommitList::new(
-            //     &strings::stashlist_title(&key_config),
-            //     theme,
-            //     key_config.clone(),
-            // ),
-            // queue: queue.clone(),
+            login: LoginComponent::new(key_config.clone()),
+            cmdbar: RefCell::new(CommandBar::new(
+                theme.clone(),
+                key_config.clone(),
+            )),
             theme,
             key_config,
         }
@@ -49,95 +62,30 @@ impl T01 {
 
     ///
     pub fn update(&mut self) -> Result<()> {
-        if self.is_visible() {
-            // let stashes = sync::get_stashes(CWD)?;
-            // let commits =
-            //     sync::get_commits_info(CWD, stashes.as_slice(), 100)?;
-            //
-            // self.list.set_count_total(commits.len());
-            // self.list.items().set_items(0, commits);
-        }
+        if self.is_visible() {}
 
         Ok(())
     }
 
-    fn apply_stash(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     match sync::stash_apply(CWD, e.id, false) {
-        //         Ok(_) => {
-        //             self.queue.push(InternalEvent::TabSwitch);
-        //         }
-        //         Err(e) => {
-        //             self.queue.push(InternalEvent::ShowErrorMsg(
-        //                 format!("stash apply error:\n{}", e, ),
-        //             ));
-        //         }
-        //     }
-        // }
-    }
+    fn apply_stash(&mut self) {}
 
-    fn drop_stash(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     self.queue.push(InternalEvent::ConfirmAction(
-        //         Action::StashDrop(e.id),
-        //     ));
-        // }
-    }
+    fn drop_stash(&mut self) {}
 
-    fn pop_stash(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     self.queue.push(InternalEvent::ConfirmAction(
-        //         Action::StashPop(e.id),
-        //     ));
-        // }
-    }
+    fn pop_stash(&mut self) {}
 
-    fn inspect(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     self.queue.push(InternalEvent::InspectCommit(e.id, None));
-        // }
-    }
-
-    // Called when a pending stash action has been confirmed
-    // pub fn action_confirmed(&self, action: &Action) -> bool {
-    //     match *action {
-    //         Action::StashDrop(id) => Self::drop(id),
-    //         Action::StashPop(id) => self.pop(id),
-    //         _ => false,
-    //     }
-    //
-    // }
-
-    // fn drop(id: CommitId) -> bool {
-    //     sync::stash_drop(CWD, id).is_ok()
-    // }
-
-    // fn pop(&self, id: CommitId) -> bool {
-    //     match sync::stash_pop(CWD, id) {
-    //         Ok(_) => {
-    //             self.queue.push(InternalEvent::TabSwitch);
-    //             true
-    //         }
-    //         Err(e) => {
-    //             self.queue.push(InternalEvent::ShowErrorMsg(
-    //                 format!("stash pop error:\n{}", e, ),
-    //             ));
-    //             true
-    //         }
-    //     }
-    // }
+    fn inspect(&mut self) {}
 }
 
 impl DrawableComponent for T01 {
-    fn draw<B: tui::backend::Backend>(
+    fn draw<B: Backend>(
         &self,
-        f: &mut tui::Frame<B>,
-        rect: tui::layout::Rect,
+        f: &mut Frame<B>,
+        rect: Rect,
     ) -> Result<()> {
         let inner = Block::default().title("t01").borders(Borders::ALL);
         f.render_widget(inner, rect);
-        // self.list.draw(f, rect)?;
-        //
+        // self.login.draw(f, rect);
+        self.draw_popups(f)?;
         Ok(())
     }
 }
@@ -189,20 +137,27 @@ impl Component for T01 {
         ev: crossterm::event::Event,
     ) -> Result<EventState> {
         if self.is_visible() {
-            // if self.list.event(ev)?.is_consumed() {
-            //     return Ok(EventState::Consumed);
+            // if let Event::Key(k) = ev {
+            //     if k == self.key_config.login {
+            //         self.login.show();
+            //         return Ok(EventState::Consumed);
+            //     } else if k == self.key_config.stash_apply {
+            //         self.apply_stash();
+            //     } else if k == self.key_config.stash_drop {
+            //         self.drop_stash();
+            //     } else if k == self.key_config.stash_open {
+            //         self.inspect();
+            //     }
             // }
-
-            if let Event::Key(k) = ev {
-                if k == self.key_config.enter {
-                    self.pop_stash();
-                } else if k == self.key_config.stash_apply {
-                    self.apply_stash();
-                } else if k == self.key_config.stash_drop {
-                    self.drop_stash();
-                } else if k == self.key_config.stash_open {
-                    self.inspect();
+            if event_pump(ev, self.components_mut().as_mut_slice())?
+                .is_consumed()
+            {
+                let msg = self.login.get_msg();
+                if !msg.is_empty() {
+                    // self.list.list_item_add(msg);
+                    info!("msg is {:?}",msg);
                 }
+                return Ok(EventState::Consumed);
             }
         }
 

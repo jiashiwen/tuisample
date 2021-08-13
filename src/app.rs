@@ -49,7 +49,7 @@ impl App {
         // let queue = Queue::new();
         let key_config = Rc::new(key_config);
 
-        App {
+        let mut app = App {
             // title: title,
             should_quit: false,
             key_config: key_config.clone(),
@@ -82,7 +82,9 @@ impl App {
             ),
             theme,
             // queue,
-        }
+        };
+        app.set_tab(0);
+        return app;
     }
 
     // pub fn on_up(&mut self) {
@@ -145,11 +147,6 @@ impl App {
             Span::raw(strings::tab_t01(&self.key_config)),
             Span::raw(strings::tab_t02(&self.key_config)),
             Span::raw(strings::tab_t03(&self.key_config))
-            // Span::raw(strings::tab_status(&self.key_config)),
-            // Span::raw(strings::tab_log(&self.key_config)),
-            // Span::raw(strings::tab_files(&self.key_config)),
-            // Span::raw(strings::tab_stashing(&self.key_config)),
-            // Span::raw(strings::tab_stashes(&self.key_config)),
         ]
             .iter()
             .cloned()
@@ -202,28 +199,7 @@ impl App {
 
         Ok(())
     }
-    // pub fn event(&mut self, ev: Event) -> Result<()> {
-    //     if let Event::Key(k) = ev {
-    //         if k == self.key_config.quit || k == self.key_config.exit {
-    //             self.do_quit = true;
-    //             return Ok(());
-    //         }
-    //         if k == self.key_config.tab_toggle {
-    //             self.toggle_tabs(true);
-    //             return Ok(());
-    //         }
-    //
-    //         if k == self.key_config.tab_status
-    //             || k == self.key_config.tab_log
-    //             || k == self.key_config.tab_files
-    //         {
-    //             self.switch_tab(k)?;
-    //             return Ok(());
-    //         }
-    //     }
-    //
-    //     Ok(())
-    // }
+
 
     pub fn update(&mut self) -> Result<()> {
         log::trace!("update");
@@ -247,35 +223,35 @@ impl App {
         }
     }
 
-    pub fn on_right(&mut self) {
-        if self.tab == 2 {
-            self.tab = 0;
-        } else {
-            self.tab = self.tab + 1;
-        }
-        // self.tabs.next();
-    }
+    // pub fn on_right(&mut self) {
+    //     if self.tab == 2 {
+    //         self.tab = 0;
+    //     } else {
+    //         self.tab = self.tab + 1;
+    //     }
+    //     // self.tabs.next();
+    // }
 
-    pub fn on_left(&mut self) {
-        if self.tab == 0 {
-            self.tab = 2;
-        } else {
-            self.tab = self.tab - 1;
-        }
-        // self.tabs.previous();
-    }
+    // pub fn on_left(&mut self) {
+    //     if self.tab == 0 {
+    //         self.tab = 2;
+    //     } else {
+    //         self.tab = self.tab - 1;
+    //     }
+    //     // self.tabs.previous();
+    // }
 
-    pub fn on_key(&mut self, c: char) {
-        match c {
-            'q' => {
-                self.should_quit = true;
-            }
-            // 't' => {
-            //     self.show_chart = !self.show_chart;
-            // }
-            _ => {}
-        }
-    }
+    // pub fn on_key(&mut self, c: char) {
+    //     match c {
+    //         'q' => {
+    //             self.should_quit = true;
+    //         }
+    //         // 't' => {
+    //         //     self.show_chart = !self.show_chart;
+    //         // }
+    //         _ => {}
+    //     }
+    // }
 
     pub const fn is_quit(&self) -> bool {
         self.do_quit
@@ -347,11 +323,12 @@ impl App {
             self.set_tab(1)?;
         } else if k == self.key_config.tab_files {
             self.set_tab(2)?;
-        } else if k == self.key_config.tab_stashing {
-            self.set_tab(3)?;
-        } else if k == self.key_config.tab_stashes {
-            self.set_tab(4)?;
         }
+        // } else if k == self.key_config.tab_stashing {
+        //     self.set_tab(3)?;
+        // } else if k == self.key_config.tab_stashes {
+        //     self.set_tab(4)?;
+        // }
 
         Ok(())
     }

@@ -20,7 +20,7 @@ pub enum InputMode {
 }
 
 pub struct SearchComponent {
-    // visible: bool,
+    visible: bool,
     input_mode: InputMode,
     input: String,
     //字符串指针位置
@@ -160,19 +160,20 @@ impl Component for SearchComponent {
         Ok(EventState::NotConsumed)
     }
 
-    // fn is_visible(&self) -> bool {
-    //     self.visible
-    // }
+    fn is_visible(&self) -> bool {
+        self.visible
+    }
 
-    // fn hide(&mut self) {
-    //     self.visible = false;
-    // }
-    //
-    // fn show(&mut self) -> Result<()> {
-    //     self.visible = true;
-    //
-    //     Ok(())
-    // }
+    fn hide(&mut self) {
+        self.clear();
+        self.visible = false;
+        self.input_mode = InputMode::Normal;
+    }
+
+    fn show(&mut self) -> Result<()> {
+        self.visible = true;
+        Ok(())
+    }
 }
 
 impl SearchComponent {
@@ -181,6 +182,7 @@ impl SearchComponent {
     ) -> Self {
         Self {
             // visible: false,
+            visible: false,
             input_mode: InputMode::Normal,
             input: "".to_string(),
             input_position: 0,
@@ -192,7 +194,6 @@ impl SearchComponent {
     }
 
     pub fn get_msg(&mut self) -> String {
-        // self.message.push(self.input.drain(..).collect());
         let mut str = "".to_string();
         if !self.message.is_empty() {
             str = self.message.clone();

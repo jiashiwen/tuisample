@@ -84,6 +84,7 @@ pub struct KeyConfig {
     pub pull: KeyEvent,
     pub abort_merge: KeyEvent,
     pub undo_commit: KeyEvent,
+    pub login: KeyEvent,
 }
 
 #[rustfmt::skip]
@@ -152,6 +153,8 @@ impl Default for KeyConfig {
             pull: KeyEvent { code: KeyCode::Char('f'), modifiers: KeyModifiers::empty() },
             abort_merge: KeyEvent { code: KeyCode::Char('M'), modifiers: KeyModifiers::SHIFT },
             open_file_tree: KeyEvent { code: KeyCode::Char('F'), modifiers: KeyModifiers::SHIFT },
+            login: KeyEvent { code: KeyCode::Char('l'), modifiers: KeyModifiers::empty() },
+
         }
     }
 }

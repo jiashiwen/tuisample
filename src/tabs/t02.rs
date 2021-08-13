@@ -24,10 +24,10 @@ pub use crate::{
 use crate::components::ListComponent;
 use crate::strings;
 
-// use asyncgit::{
-//     CWD,
-//     sync::{self, CommitId},
-// };
+enum Focus {
+    List1,
+    List2,
+}
 
 pub struct T02 {
     // list: CommitList,
@@ -36,33 +36,37 @@ pub struct T02 {
     msg: Vec<String>,
     search: SearchComponent,
     list: ListComponent,
+    list2: ListComponent,
     theme: SharedTheme,
     key_config: SharedKeyConfig,
 }
 
 impl T02 {
-    accessors!(self, [list,search]);
+    accessors!(self, [list,list2,search]);
     ///
     pub fn new(
         // queue: &Queue,
         theme: SharedTheme,
         key_config: SharedKeyConfig,
     ) -> Self {
-        Self {
-            visible: false,
-            // list: CommitList::new(
-            //     &strings::stashlist_title(&key_config),
-            //     theme,
-            //     key_config.clone(),
-            // ),
-            // queue: queue.clone(),
-            msg: vec![],
-            search: SearchComponent::new(key_config.clone()),
-            list: ListComponent::new(key_config.clone()),
-            theme,
-            key_config,
-        }
+        let mut t02 =
+            Self {
+                visible: false,
+                msg: vec![],
+                search: SearchComponent::new(key_config.clone()),
+                list: ListComponent::new_with_title("list1".to_string(),
+                                                    theme.clone(),
+                                                    key_config.clone()),
+                list2: ListComponent::new_with_title("list2".to_string(),
+                                                     theme.clone(),
+                                                     key_config.clone()),
+                theme,
+                key_config,
+            };
+        t02.list.focus(true);
+        return t02;
     }
+
 
     ///
     pub fn update(&mut self) -> Result<()> {
@@ -79,41 +83,17 @@ impl T02 {
         Ok(())
     }
 
-    // pub fn get_search_msg(&mut self) {
-    //     self.msg = self.search.get_msg();
-    // }
-
-    fn apply_stash(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     match sync::stash_apply(CWD, e.id, false) {
-        //         Ok(_) => {
-        //             self.queue.push(InternalEvent::TabSwitch);
-        //         }
-        //         Err(e) => {
-        //             self.queue.push(InternalEvent::ShowErrorMsg(
-        //                 format!("stash apply error:\n{}", e, ),
-        //             ));
-        //         }
-        //     }
-        // }
-    }
-
-    fn drop_stash(&mut self) {
-        // info!("{:?}",self.get_search_msg())
-    }
-
-    fn pop_stash(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     self.queue.push(InternalEvent::ConfirmAction(
-        //         Action::StashPop(e.id),
-        //     ));
-        // }
-    }
-
-    fn inspect(&mut self) {
-        // if let Some(e) = self.list.selected_entry() {
-        //     self.queue.push(InternalEvent::InspectCommit(e.id, None));
-        // }
+    fn toggle_focus(&mut self) {
+        if self.list.focused() {
+            self.list.focus(false);
+            self.list2.focus(true);
+            return;
+        }
+        if self.list2.focused() {
+            self.list2.focus(false);
+            self.list.focus(true);
+            return;
+        }
     }
 }
 
@@ -132,11 +112,18 @@ impl DrawableComponent for T02 {
                         Constraint::Length(9)
                     ]
                 ).split(rect);
+            let list_chunk = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(
+                    [
+                        Constraint::Percentage(30),
+                        Constraint::Percentage(70)
+                    ]
+                ).split(chunks[1]);
 
             self.search.draw(f, chunks[0])?;
-            // let inner = Block::default().title("t02").borders(Borders::ALL);
-            // f.render_widget(inner, chunks[1]);
-            self.list.draw(f, chunks[1])?;
+            self.list.draw(f, list_chunk[0])?;
+            self.list2.draw(f, list_chunk[1])?;
         }
         Ok(())
     }
@@ -191,44 +178,56 @@ impl Component for T02 {
         ev: crossterm::event::Event,
     ) -> Result<EventState> {
         if self.is_visible() {
-            // self.update();
-            if event_pump(ev, self.components_mut().as_mut_slice())?
-                .is_consumed()
-            {
-                let msg = self.search.get_msg();
-                if !msg.is_empty() {
-                    self.list.list_item_add(msg);
-                }
-                return Ok(EventState::Consumed);
-            }
-
+            // if let Event::Key(k) = ev {
+            //     if k == self.key_config.focus_left {
+            //         self.toggle_focus();
+            //         return Ok(EventState::Consumed);
+            //     }
+            //     if k == self.key_config.focus_right {
+            //         self.toggle_focus();
+            //         return Ok(EventState::Consumed);
+            //     }
+            // }
             match self.search.get_input_mode() {
                 InputMode::Normal => {
-                    return self.list.event(ev);
+                    self.list.enable_event();
+                    self.list2.enable_event();
+
+                    if let Event::Key(k) = ev {
+                        if k == self.key_config.focus_left {
+                            self.toggle_focus();
+                            return Ok(EventState::Consumed);
+                        }
+                        if k == self.key_config.focus_right {
+                            self.toggle_focus();
+                            return Ok(EventState::Consumed);
+                        }
+                    }
                 }
                 _ => {}
             }
-
-            // let result = self.search.event(ev);
-            let msg = self.search.get_msg();
-            info!("msg is empty {}",msg.is_empty());
-            if !msg.is_empty() {
-                self.list.list_item_add(msg);
+            if event_pump(ev, self.components_mut().as_mut_slice())?
+                .is_consumed()
+            {
+                match self.search.get_input_mode() {
+                    InputMode::Editing => {
+                        self.list.unselected();
+                        self.list.disable_event();
+                        self.list2.unselected();
+                        self.list2.disable_event();
+                    }
+                    _ => {}
+                }
+                let msg = self.search.get_msg();
+                if !msg.is_empty() {
+                    if self.list.focused() {
+                        self.list.list_item_add(msg);
+                    } else {
+                        self.list2.list_item_add(msg);
+                    }
+                }
+                return Ok(EventState::Consumed);
             }
-
-
-            // return result;
-            // if let Event::Key(k) = ev {
-            //     if k == self.key_config.enter {
-            //         self.pop_stash();
-            //     } else if k == self.key_config.stash_apply {
-            //         self.apply_stash();
-            //     } else if k == self.key_config.stash_drop {
-            //         self.drop_stash();
-            //     } else if k == self.key_config.stash_open {
-            //         self.inspect();
-            //     }
-            // }
         }
 
         Ok(EventState::NotConsumed)
@@ -240,10 +239,12 @@ impl Component for T02 {
 
     fn hide(&mut self) {
         self.visible = false;
+        self.search.hide();
     }
 
     fn show(&mut self) -> Result<()> {
         self.visible = true;
+        self.search.show();
         self.update()?;
         Ok(())
     }

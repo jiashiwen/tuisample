@@ -13,6 +13,8 @@ use tui::{
 pub use command::{CommandInfo, CommandText};
 pub use help::HelpComponent;
 pub use list::ListComponent;
+pub use login::LoginComponent;
+pub use popinput::PopInputComponent;
 pub use search::InputMode;
 pub use search::SearchComponent;
 
@@ -22,6 +24,8 @@ mod command;
 mod help;
 mod search;
 mod list;
+mod popinput;
+mod login;
 
 
 /// creates accessors for a list of components

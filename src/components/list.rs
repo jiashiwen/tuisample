@@ -12,66 +12,13 @@ use tui::widgets::{Block, Borders, Clear, List, ListItem, ListState};
 
 use crate::components::{CommandBlocking, CommandInfo, Component, DrawableComponent, EventState};
 use crate::keys::SharedKeyConfig;
-
-pub struct ListStateful<T> {
-    pub stat: ListState,
-    pub items: Vec<T>,
-}
-
-pub struct StatefulList<T> {
-    pub state: ListState,
-    pub items: Vec<T>,
-}
-
-impl<T> StatefulList<T> {
-    pub fn new() -> StatefulList<T> {
-        StatefulList {
-            state: ListState::default(),
-            items: Vec::new(),
-        }
-    }
-
-    pub fn with_items(items: Vec<T>) -> StatefulList<T> {
-        StatefulList {
-            state: ListState::default(),
-            items,
-        }
-    }
-
-    // pub fn next(&mut self) {
-    //     let i = match self.state.selected() {
-    //         Some(i) => {
-    //             if i >= self.items.len() - 1 {
-    //                 0
-    //             } else {
-    //                 i + 1
-    //             }
-    //         }
-    //         None => 0,
-    //     };
-    //     self.state.select(Some(i));
-    // }
-    //
-    // pub fn previous(&mut self) {
-    //     let i = match self.state.selected() {
-    //         Some(i) => {
-    //             if i == 0 {
-    //                 self.items.len() - 1
-    //             } else {
-    //                 i - 1
-    //             }
-    //         }
-    //         None => 0,
-    //     };
-    //     self.state.select(Some(i));
-    // }
-
-    pub fn unselect(&mut self) {
-        self.state.select(None);
-    }
-}
+use crate::ui::style::SharedTheme;
 
 pub struct ListComponent {
+    title: String,
+    selected: bool,
+    theme: SharedTheme,
+    event_enable: bool,
     list_items: Vec<String>,
     state: RefCell<ListState>,
     key_config: SharedKeyConfig,
@@ -83,7 +30,7 @@ impl Component for ListComponent {
     }
 
     fn event(&mut self, ev: Event) -> anyhow::Result<EventState> {
-        if self.is_visible() {
+        if self.is_visible() && self.event_enable && self.selected {
             if let Event::Key(key) = ev {
                 match key.code {
                     KeyCode::Down => {
@@ -96,9 +43,21 @@ impl Component for ListComponent {
                     }
                     _ => {}
                 }
+
+                if key == self.key_config.stash_drop {
+                    self.remove_line();
+                }
             }
         }
         Ok(EventState::NotConsumed)
+    }
+
+    fn focused(&self) -> bool {
+        self.selected
+    }
+
+    fn focus(&mut self, _focus: bool) {
+        self.selected = _focus;
     }
 }
 
@@ -112,11 +71,14 @@ impl DrawableComponent for ListComponent {
                 .collect();
 
             let msglist = List::new(list_items)
-                .block(Block::default().borders(Borders::ALL).title("List"))
+                .block(Block::default()
+                    .borders(Borders::ALL)
+                    .title(self.title.clone())
+                    .border_style(self.theme.block(self.selected)))
                 .highlight_style(
-                    Style::default()
-                        .bg(Color::LightGreen)
-                        .add_modifier(Modifier::BOLD),
+                    // Style::default()
+                    self.theme.commit_author(true)
+                    // .add_modifier(Modifier::UNDERLINED),
                 );
             let mut stat = self.state.borrow_mut();
             f.render_stateful_widget(msglist, rect, &mut stat);
@@ -128,13 +90,42 @@ impl DrawableComponent for ListComponent {
 
 impl ListComponent {
     pub fn new(
+        theme: SharedTheme,
         key_config: SharedKeyConfig,
     ) -> Self {
         Self {
+            title: "".to_string(),
+            selected: false,
+            theme,
+            event_enable: true,
             list_items: vec!["1".to_string(), "2".to_string()],
             state: RefCell::new(ListState::default()),
             key_config,
         }
+    }
+
+    pub fn new_with_title(
+        title: String,
+        theme: SharedTheme,
+        key_config: SharedKeyConfig,
+    ) -> Self {
+        Self {
+            title,
+            selected: false,
+            theme,
+            event_enable: true,
+            list_items: vec!["1".to_string(), "2".to_string()],
+            state: RefCell::new(ListState::default()),
+            key_config,
+        }
+    }
+
+    pub fn enable_event(&mut self) {
+        self.event_enable = true;
+    }
+
+    pub fn disable_event(&mut self) {
+        self.event_enable = false;
     }
     pub fn next(&mut self) {
         let i = match self.state.get_mut().selected() {
@@ -151,6 +142,11 @@ impl ListComponent {
         info!("selected {}",i);
     }
 
+    pub fn set_title(&mut self, title: String) {
+        self.title = title;
+    }
+
+
     pub fn previous(&mut self) {
         let i = match self.state.get_mut().selected() {
             Some(i) => {
@@ -163,6 +159,28 @@ impl ListComponent {
             None => 0,
         };
         self.state.get_mut().select(Some(i));
+    }
+
+    pub fn unselected(&mut self) {
+        self.state.get_mut().select(None);
+    }
+
+    fn remove_line(&mut self) {
+        match self.state.get_mut().selected() {
+            Some(idx) => {
+                self.list_items.swap_remove(idx);
+                info!("idx is {}",idx);
+                info!("items length {}",self.list_items.len());
+                if idx >= self.list_items.len() {
+                    if self.list_items.len() == 0 {
+                        self.unselected();
+                        return;
+                    }
+                    self.previous();
+                }
+            }
+            None => {}
+        };
     }
     pub fn list_item_add(&mut self, str: String) {
         self.list_items.push(str);
